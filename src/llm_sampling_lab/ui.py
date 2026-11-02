@@ -303,7 +303,11 @@ def offline_page() -> None:
 
     st.subheader("Distribution details")
     st.dataframe(
-        frame.style.format({"Expected": "{:.4f}", "Observed": "{:.4f}"}),
+        frame,
+        column_config={
+            "Expected": st.column_config.NumberColumn(format="%.4f"),
+            "Observed": st.column_config.NumberColumn(format="%.4f"),
+        },
         hide_index=True,
         use_container_width=True,
     )
