@@ -16,6 +16,26 @@ The laboratory can run locally with Python and `uv`, or inside Docker containers
 
 ---
 
+## Interactive Web UI
+
+A browser-based Streamlit dashboard is available for **Offline Simulator**, **Live Groq Experiments**, **Movie Review Studio**, and **Experiment History**.
+
+Start it from the repository root:
+
+```bash
+uv run --with "streamlit>=1.45,<2" streamlit run src/llm_sampling_lab/ui.py
+```
+
+If you have created a private `.env` file containing `GROQ_API_KEY`, load it for the live and movie experiments:
+
+```bash
+uv run --env-file .env --with "streamlit>=1.45,<2" streamlit run src/llm_sampling_lab/ui.py
+```
+
+**Offline simulations need no API key.** Streamlit is installed on demand, keeping the existing CLI/Docker lockfile unchanged. More details: [Web UI guide](docs/ui-guide.md).
+
+---
+
 ## 1. Learning Objectives
 
 After completing this laboratory, participants should be able to:
