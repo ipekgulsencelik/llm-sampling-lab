@@ -185,3 +185,78 @@ def test_requires_two_experiments():
         compare_benchmark_reports([
             make_report()
         ])
+
+
+
+def test_benchmark_token_averages():
+    report = build_benchmark_report(
+        make_report(latencies=(0.1, 0.2, 0.3))
+    )
+    metrics = report["metrics"]
+    assert metrics["Recorded Total Tokens"] == 45
+    assert metrics["Average Input Tokens / Request"] == 10
+    assert metrics["Average Output Tokens / Request"] == 5
+    assert metrics["Average Total Tokens / Request"] == 15
+    assert metrics["Total Token Coverage"] == 3
+
+    group = report["by_parameter"][0]
+    assert group["Recorded Total Tokens"] == 45
+    assert group["Average Total Tokens / Request"] == 15
+    assert group["Total Token Coverage"] == 3
+
+
+def test_benchmark_partial_usage_uses_measured_denominator():
+    report = make_report()
+    report["results"][1]["output_tokens"] = None
+    report["results"][2]["input_tokens"] = None
+
+    metrics = build_benchmark_report(report)["metrics"]
+
+    assert metrics["Requests"] == 3
+    assert metrics["Input Coverage"] == 2
+    assert metrics["Output Coverage"] == 2
+    assert metrics["Total Token Coverage"] == 1
+    assert metrics["Average Input Tokens / Request"] == 10
+    assert metrics["Average Output Tokens / Request"] == 5
+    assert metrics["Recorded Total Tokens"] == 15
+    assert metrics["Average Total Tokens / Request"] == 15
+
+
+def test_benchmark_without_usage_has_unknown_averages():
+    report = make_report()
+    for result in report["results"]:
+        result["input_tokens"] = None
+        result["output_tokens"] = None
+
+    metrics = build_benchmark_report(report)["metrics"]
+
+    assert metrics["Recorded Total Tokens"] is None
+    assert metrics["Average Input Tokens / Request"] is None
+    assert metrics["Average Output Tokens / Request"] is None
+    assert metrics["Average Total Tokens / Request"] is None
+    assert metrics["Total Token Coverage"] == 0
+
+
+
+def test_different_request_counts_use_per_request_mean():
+    long_report = make_report(
+        experiment_id="long",
+        latencies=(0.1,) * 20,
+        input_tokens=60,
+        output_tokens=40,
+    )
+    short_report = make_report(
+        experiment_id="short",
+        latencies=(0.1,) * 10,
+        input_tokens=90,
+        output_tokens=60,
+    )
+
+    comparison = compare_benchmark_reports([long_report, short_report])
+    long_metrics, short_metrics = comparison["summary_rows"]
+
+    assert long_metrics["Recorded Total Tokens"] == 2000
+    assert short_metrics["Recorded Total Tokens"] == 1500
+    assert long_metrics["Average Total Tokens / Request"] == 100
+    assert short_metrics["Average Total Tokens / Request"] == 150
+    assert any("Request counts differ" in w for w in comparison["warnings"])
