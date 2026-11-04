@@ -38,6 +38,7 @@ from llm_sampling_lab.services.reproducibility_service import (
     summarize_reproducibility,
 )
 from llm_sampling_lab.services.benchmark_reporting_service import (
+    build_token_comparison_rows,
     compare_benchmark_reports,
 )
 from llm_sampling_lab.services.controlled_benchmark import (
@@ -2113,6 +2114,42 @@ def render_benchmark_comparison_tab() -> None:
         )
     else:
         st.info("Selected reports have no token usage data.")
+
+    st.markdown("#### Token Usage — Numeric Comparison")
+    token_summary = pd.DataFrame(
+        build_token_comparison_rows(comparison["summary_rows"])
+    )
+    st.dataframe(
+        token_summary,
+        column_config={
+            "Provider / Model": st.column_config.TextColumn(
+                "Provider / Model"
+            ),
+            "Requests": st.column_config.NumberColumn(
+                "Requests", format="%d"
+            ),
+            "Recorded Total Tokens": st.column_config.NumberColumn(
+                "Recorded Total Tokens", format="%d"
+            ),
+            "Average Total Tokens / Request": st.column_config.NumberColumn(
+                "Avg Tokens / Request", format="%.2f"
+            ),
+            "Difference vs E1": st.column_config.TextColumn(
+                "Avg Token Difference vs E1 (%)"
+            ),
+            "Token Coverage": st.column_config.TextColumn(
+                "Token Coverage (input + output)"
+            ),
+        },
+        hide_index=True,
+        width="stretch",
+    )
+    st.caption(
+        "E1 is the first selected experiment (reference). A positive "
+        "percentage means higher average tokens per request than E1; "
+        "a negative percentage means lower usage. N/A means the reference "
+        "has zero or missing average usage, or the comparison is missing."
+    )
 
     with st.expander("View absolute token totals"):
         token_columns = [
